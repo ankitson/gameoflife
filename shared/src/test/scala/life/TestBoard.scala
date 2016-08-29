@@ -13,17 +13,6 @@ object TestBoard extends TestSuite {
   var board = Board(boardStr)
 
   val tests = this {
-
-    'split {
-      val line = "123"
-      val splits = line.split("").toList
-      //println("splits: " + splits) //JVM => ("1","2","3"). JS => ("","1","2","3")
-      //assert (splits.length == 3) //fails on JS
-
-      val chars = line.toList
-      assert (chars == List('1','2','3'))
-    }
-
     'step {
       board.step()
       for (col <- 0 until board.rows()(0).length) {

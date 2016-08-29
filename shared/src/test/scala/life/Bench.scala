@@ -47,6 +47,15 @@ import org.openjdk.jmh.annotations._
   [info] Bench.setBoardIdx      thrpt   15  365710.405 ±  9409.180  ops/ms
   [info] Bench.stepBoardBench   thrpt   15      62.946 ±     2.401  ops/ms
   [info] Bench.stepCellBench    thrpt   15    2402.431 ±   166.437  ops/ms
+
+  (speedup by memoizing neighbour indexes)
+  [info] Benchmark               Mode  Cnt       Score       Error   Units
+  [info] Bench.compareBoardIdx  thrpt   15  205324.202 ± 49465.448  ops/ms
+  [info] Bench.neighboursBench  thrpt   15   20121.666 ±   912.573  ops/ms
+  [info] Bench.setArray         thrpt   15  588137.165 ± 18610.425  ops/ms
+  [info] Bench.setBoardIdx      thrpt   15  444062.475 ±  3899.233  ops/ms
+  [info] Bench.stepBoardBench   thrpt   15     418.195 ±     3.915  ops/ms
+  [info] Bench.stepCellBench    thrpt   15   17440.708 ±   355.982  ops/ms
 */
 object Bench {
   @State(Scope.Benchmark)
@@ -70,35 +79,42 @@ class Bench {
 
   @Benchmark
   @BenchmarkMode(Array(Mode.Throughput))
-  @OutputTimeUnit(TimeUnit.SECONDS)
+  @OutputTimeUnit(TimeUnit.MILLISECONDS)
   def setArray(state:BenchState) = {
     state.arr(0)(0) = Live
   }
 
   @Benchmark
   @BenchmarkMode(Array(Mode.Throughput))
-  @OutputTimeUnit(TimeUnit.SECONDS)
+  @OutputTimeUnit(TimeUnit.MILLISECONDS)
   def setBoardIdx(state:BenchState) = {
     state.board.rows()(0)(0) = Live
   }
 
   @Benchmark
   @BenchmarkMode(Array(Mode.Throughput))
-  @OutputTimeUnit(TimeUnit.SECONDS)
+  @OutputTimeUnit(TimeUnit.MILLISECONDS)
+  def compareBoardIdx(state:BenchState) = {
+    state.board.rows()(0)(0) == Live
+  }
+
+  @Benchmark
+  @BenchmarkMode(Array(Mode.Throughput))
+  @OutputTimeUnit(TimeUnit.MILLISECONDS)
   def neighboursBench(state:BenchState) = {
     state.board.neighbours(0,0)
   }
 
   @Benchmark
   @BenchmarkMode(Array(Mode.Throughput))
-  @OutputTimeUnit(TimeUnit.SECONDS)
+  @OutputTimeUnit(TimeUnit.MILLISECONDS)
   def stepCellBench(state:BenchState) = {
     state.board.stepCell(0,0)
   }
 
   @Benchmark
   @BenchmarkMode(Array(Mode.Throughput))
-  @OutputTimeUnit(TimeUnit.SECONDS)
+  @OutputTimeUnit(TimeUnit.MILLISECONDS)
   def stepBoardBench(state:BenchState) = {
     state.board.step()
   }

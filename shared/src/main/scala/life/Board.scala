@@ -2,6 +2,7 @@ package life
 
 import Board._
 
+import scala.collection.mutable
 import scala.util.Random
 class Board(private val rowsArr:Array[Array[Cell]]) {
   val rowsArr2 = rowsArr.clone().map(_.clone())
@@ -19,12 +20,14 @@ class Board(private val rowsArr:Array[Array[Cell]]) {
     if (flag) rowsArr else rowsArr2
   }
 
+
+  private val cache = mutable.Map.empty[(Int,Int), (List[(Int,Int)])]
   def neighbours(x:Int,y:Int) = {
-    List(
+    cache.getOrElseUpdate((x,y), List(
       (x-1,y-1), (x-1,y), (x-1,y+1),
       (x,y-1), (x,y+1),
       (x+1,y-1), (x+1,y), (x+1,y+1)
-    ).filter{ case (i,j) => i >= 0 && i < n && j >= 0 && j < m}
+    ).filter{ case (i,j) => i >= 0 && i < n && j >= 0 && j < m} )
   }
 
   def step() = {
@@ -40,13 +43,14 @@ class Board(private val rowsArr:Array[Array[Cell]]) {
   def stepCell(x:Int,y:Int)= {
     val (board1,board2) = if (flag) (rowsArr,rowsArr2) else (rowsArr2,rowsArr)
     val cell = board1(x)(y)
+
     val aliveNbrs = neighbours(x,y).count{case (x,y) => board1(x)(y) == Live}
     (cell,aliveNbrs) match {
       case (Live,a) if a < 2 => board2(x)(y) = Dead
       case (Live,a) if a == 2 || a == 3 => board2(x)(y) = Live
       case (Live,a) if a > 3 => board2(x)(y) = Dead
       case (Dead,a) if a == 3 => board2(x)(y) = Live
-      case _ => ()
+      case _ => board2(x)(y) = Dead
     }
   }
 
@@ -77,11 +81,11 @@ object Board {
     })
   }
 
-  def randomBoard(n:Int,m:Int): Board = {
+  def randomBoard(n:Int,m:Int,density:Double = 0.5): Board = {
     def col() = {
       val colArr = Array.fill(m)(Dead: Cell)
       for (j <- 0 until m) {
-        if (Random.nextFloat() > 0.5) {
+        if (Random.nextFloat() <= density) {
           colArr(j) = Live
         }
       }
@@ -91,16 +95,5 @@ object Board {
     Board(boardArr)
   }
 
-  def board1: Board = {
-    val boardStr =
-      """
-        |*--*-
-        |----*
-        |-----
-        |-----
-        |*---*
-      """.stripMargin
-    Board(boardStr)
-  }
 
 }
