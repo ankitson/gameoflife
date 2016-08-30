@@ -20,8 +20,8 @@ object GameOfLifeJS extends js.JSApp {
   canvas.height = canvas.offsetHeight.toInt
   val ctx = canvas.getContext("2d").asInstanceOf[dom.CanvasRenderingContext2D]
 
-  var cellWidth = canvas.width.toDouble/board.m
-  var cellHeight = canvas.height.toDouble/board.n
+  var cellWidth = canvas.width/board.m
+  var cellHeight = canvas.height/board.n
 
   def init() = {
     cellWidth = canvas.width/board.m
@@ -34,12 +34,12 @@ object GameOfLifeJS extends js.JSApp {
   }
 
 
-  //var stats = js.Dynamic.newInstance(js.Dynamic.global.Stats)()
-  //stats.showPanel( 0 ); // 0: fps, 1: ms, 2: mb, 3+: custom
-  //dom.document.body.appendChild( stats.dom.asInstanceOf[org.scalajs.dom.raw.Node] )
+  var stats = js.Dynamic.newInstance(js.Dynamic.global.Stats)()
+  stats.showPanel( 1 ); // 0: fps, 1: ms, 2: mb, 3+: custom
+  dom.document.body.appendChild( stats.dom.asInstanceOf[org.scalajs.dom.raw.Node] )
 
   def draw(): Unit = {
-    //stats.begin()
+    stats.begin()
     val (boardArr,boardArr2) = board.currentAndPrev()
     for (row <- 0 until board.m) {
       for (col <- 0 until board.n) {
@@ -60,7 +60,7 @@ object GameOfLifeJS extends js.JSApp {
       }
     }
     board.step()
-    //stats.end()
+    stats.end()
 
     if (run) dom.window.requestAnimationFrame((_:Double) => draw())
   }
@@ -92,11 +92,11 @@ object GameOfLifeJS extends js.JSApp {
         init()
         dom.window.requestAnimationFrame((_: Double) => draw())
       } catch {
-        case e => println("exception: " + e)
+        case _ => ()
       }
     }
 
     init()
-    dom.window.requestAnimationFrame((d:Double) => draw())
+    dom.window.requestAnimationFrame((_:Double) => draw())
   }
 }
