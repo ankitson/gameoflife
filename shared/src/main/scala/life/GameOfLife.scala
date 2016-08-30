@@ -10,13 +10,8 @@ object GameOfLife {
     val board = randomBoard(10,10)
 
     val pw = new PrintWriter(System.out)
-    var fps = 60
-    if (args.length > 0) {
-      fps = args(0).toInt
-    }
-    def waitTime() = 1000/fps
 
-    println(f"$fps FPS. Starting board: ")
+    println(f"Starting board: ")
     println(board)
 
     while (true) {
