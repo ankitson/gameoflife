@@ -19,7 +19,19 @@ lazy val life = crossProject.in(file(".")).
       "com.lihaoyi" %%% "utest" % "0.4.3" % "test"
     ),
     testFrameworks += new TestFramework("utest.runner.Framework"),
-    scalaJSUseRhino in Global := false
+    scalaJSUseRhino in Global := false,
+    scalacOptions ++= Seq(
+      "-target:jvm-1.8",
+      "-encoding", "UTF-8",
+      "-unchecked",
+      "-deprecation",
+      "-Xfuture",
+      "-Yno-adapted-args",
+      "-Ywarn-dead-code",
+      "-Ywarn-numeric-widen",
+      "-Ywarn-value-discard",
+      "-Ywarn-unused"
+    )
   ).jvmSettings(
     // bl
   ).jsSettings(
