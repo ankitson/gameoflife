@@ -1,0 +1,16 @@
+[0m[[0minfo[0m] [0mFast optimizing /Users/ankit/Documents/Code/gameoflife/js/target/scala-2.11/life-fastopt.js[0m
+[0m[[0mdebug[0m] [0mLinker: Compute reachability: 286248 us[0m
+[0m[[0mdebug[0m] [0mLinker: Assemble LinkedClasses: 342685 us[0m
+[0m[[0mdebug[0m] [0mBasic Linking: 643647 us[0m
+[0m[[0mdebug[0m] [0mInc. optimizer: Batch mode: true[0m
+[0m[[0mdebug[0m] [0mInc. optimizer: Incremental part: 185140 us[0m
+[0m[[0mdebug[0m] [0mInc. optimizer: Optimizing 2421 methods.[0m
+[0m[[0mdebug[0m] [0mInc. optimizer: Optimizer part: 584066 us[0m
+[0m[[0mdebug[0m] [0mInc. optimizer: 787204 us[0m
+[0m[[0mdebug[0m] [0mRefiner: Compute reachability: 66050 us[0m
+[0m[[0mdebug[0m] [0mRefiner: Assemble LinkedClasses: 11266 us[0m
+[0m[[0mdebug[0m] [0mRefiner: 79418 us[0m
+[0m[[0mdebug[0m] [0mEmitter: Class tree cache stats: reused: 0 -- invalidated: 310[0m
+[0m[[0mdebug[0m] [0mEmitter: Method tree cache stats: resued: 0 -- invalidated: 1273[0m
+[0m[[0mdebug[0m] [0mEmitter (write output): 684301 us[0m
+[0m[[0mdebug[0m] [0mGlobal IR cache stats: reused: 0 -- invalidated: 25 -- trees read: 421[0m
