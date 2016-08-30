@@ -3,69 +3,65 @@ package life
 import life.Board.Live
 
 import scala.scalajs.js
-import scala.scalajs.js._
 import scala.scalajs.js.Any._
 import js.annotation.JSExport
 import org.scalajs.dom
 import org.scalajs.dom.KeyboardEvent
-import org.scalajs.dom.ext.Color
-import org.scalajs.dom.raw.MouseEvent
+import org.scalajs.dom.ext.{Color, KeyCode}
+import org.scalajs.dom.raw.{HTMLCanvasElement, HTMLInputElement}
 
-import scala.collection.mutable
-
+@JSExport
 object GameOfLifeJS extends js.JSApp {
 
   var run = true
-  var draws = 0
-  val n = 60
-  val m = 60
-  val board = Board.randomBoard(n,m,0.1)
-
+  var board = Board.randomBoard(10,10,0.1)
   val canvas = dom.document.getElementById("life").asInstanceOf[dom.html.Canvas]
-  val ctx = canvas.getContext("2d").asInstanceOf[dom.CanvasRenderingContext2D]
   canvas.width = canvas.offsetWidth.toInt
   canvas.height = canvas.offsetHeight.toInt
-  val cellWidth = (canvas.width-2)/board.m
-  val cellHeight = (canvas.height-2)/board.n
+  val ctx = canvas.getContext("2d").asInstanceOf[dom.CanvasRenderingContext2D]
 
-  val totalWidth = cellWidth * board.m
-  val totalHeight = cellHeight * board.n
-  ctx.strokeStyle = Color.Black.asInstanceOf[Any]
-  ctx.lineWidth = 3
-  ctx.moveTo(0,0)
+  var cellWidth = canvas.width.toDouble/board.m
+  var cellHeight = canvas.height.toDouble/board.n
 
-  dom.document.onkeydown = (event:KeyboardEvent) => {
-    if (event.keyCode == 39) draw()
+  def init() = {
+    cellWidth = canvas.width/board.m
+    cellHeight= canvas.height/board.n
+    ctx.strokeStyle = Color.Black.toString()
+    ctx.lineWidth = 1
+    ctx.moveTo(0,0)
+
+    ctx.clearRect(0,0,canvas.width,canvas.height)
   }
 
-  val visited = mutable.Set[(Int,Int)]()
+
+  //var stats = js.Dynamic.newInstance(js.Dynamic.global.Stats)()
+  //stats.showPanel( 0 ); // 0: fps, 1: ms, 2: mb, 3+: custom
+  //dom.document.body.appendChild( stats.dom.asInstanceOf[org.scalajs.dom.raw.Node] )
+
   def draw(): Unit = {
+    //stats.begin()
+    val (boardArr,boardArr2) = board.currentAndPrev()
     for (row <- 0 until board.m) {
       for (col <- 0 until board.n) {
         val xcoord = col * cellWidth
         val ycoord = row * cellHeight
-        if (board.rows()(row)(col) == Live) {
-          ctx.fillStyle = Color.Red.asInstanceOf[Any]
-          visited.add((row, col))
-        } else {
-          if (visited contains (row,col)) {
-            ctx.fillStyle = "rgba(0,255,0,0.2)"
+        if (true) {
+          if (boardArr(row)(col) == Live) {
+            ctx.fillStyle = "rgba(255,0,0,1)"
+          } else {
+            ctx.fillStyle = "rgba(255,255,255,1)"
           }
-          else {
-            ctx.fillStyle = Color.White.asInstanceOf[Any]
-          }
+          val startX = xcoord
+          val startY = ycoord
+          val width = cellWidth
+          val height = cellHeight
+          ctx.fillRect(startX,startY,width,height)
         }
-        val endX = xcoord+cellWidth
-        val endY = ycoord+cellHeight
-        val size = (endX-xcoord,endY-ycoord)
-
-        ctx.fillRect(xcoord, ycoord, endX, endY)
-        ctx.strokeRect(xcoord, ycoord, endX,endY)
       }
     }
     board.step()
+    //stats.end()
 
-    draws += 1
     if (run) dom.window.requestAnimationFrame((_:Double) => draw())
   }
 
@@ -74,14 +70,33 @@ object GameOfLifeJS extends js.JSApp {
 
     dom.document.onclick = {(evt:dom.MouseEvent) =>
         run = !run
-        if (run) dom.window.requestAnimationFrame((_:Double) => draw())
+        if (run) {
+          init()
+          dom.window.requestAnimationFrame((_:Double) => draw())
+        }
     }
 
-    dom.window.setInterval({ () =>
-      println(s"$draws draws per second")
-      draws = 0
-    },1000)
 
+    dom.document.onkeydown = (event:KeyboardEvent) => {
+      if (event.keyCode == KeyCode.Right) draw()
+      if (event.keyCode == KeyCode.Space) run = !run; if (run) { init(); dom.window.requestAnimationFrame((_:Double) => draw()) }
+    }
+
+    dom.document.getElementById("size").asInstanceOf[HTMLInputElement].onkeypress = {(evt:KeyboardEvent) =>
+      run = false
+      try {
+        val newSize = dom.document.getElementById("size").asInstanceOf[HTMLInputElement].value.toInt
+        dom.document.getElementById("sizeShow").innerHTML = newSize.toString
+        board = Board.randomBoard(newSize, newSize)
+        run = true
+        init()
+        dom.window.requestAnimationFrame((_: Double) => draw())
+      } catch {
+        case e => println("exception: " + e)
+      }
+    }
+
+    init()
     dom.window.requestAnimationFrame((d:Double) => draw())
   }
 }

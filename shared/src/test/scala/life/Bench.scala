@@ -56,6 +56,21 @@ import org.openjdk.jmh.annotations._
   [info] Bench.setBoardIdx      thrpt   15  444062.475 ±  3899.233  ops/ms
   [info] Bench.stepBoardBench   thrpt   15     418.195 ±     3.915  ops/ms
   [info] Bench.stepCellBench    thrpt   15   17440.708 ±   355.982  ops/ms
+
+  (speedup by using 2d array instead of mutable map to memoize neighbours)
+    [info] Benchmark             Mode  Cnt      Score      Error   Units
+    [info] Bench.stepCellBench  thrpt   15  47474.047 ± 4534.626  ops/ms
+
+    [info] Benchmark              Mode  Cnt      Score     Error   Units
+    [info] Bench.stepBoardBench  thrpt   15    726.390 ±   5.042  ops/ms
+    [info] Bench.stepCellBench   thrpt   15  37768.831 ± 392.765  ops/ms
+    [info] Bench.neighboursBench thrpt   15    271244.579 ±   2451.076  ops/ms
+
+    [info] Benchmark              Mode  Cnt         Score        Error  Units
+    [info] Bench.stepBoardBench  thrpt   15      726,558.775 ±    6571.231  ops/s
+    [info] Bench.stepCellBench   thrpt   15   37,414,962.430 ±  746148.292  ops/s (37M cells per sec!)
+    [info] Bench.neighboursBench thrpt   15  268,707,348.584 ± 2761828.773  ops/s
+
 */
 object Bench {
   @State(Scope.Benchmark)
@@ -66,7 +81,7 @@ object Bench {
         |-*------*-
         |-*------*-
       """.stripMargin
-    var board = Board(boardStr)
+    var board = Board(boardStr) //Board.randomBoard(40,40,0.1)
     val n = board.n
     val m = board.m
 
@@ -79,42 +94,21 @@ class Bench {
 
   @Benchmark
   @BenchmarkMode(Array(Mode.Throughput))
-  @OutputTimeUnit(TimeUnit.MILLISECONDS)
-  def setArray(state:BenchState) = {
-    state.arr(0)(0) = Live
-  }
-
-  @Benchmark
-  @BenchmarkMode(Array(Mode.Throughput))
-  @OutputTimeUnit(TimeUnit.MILLISECONDS)
-  def setBoardIdx(state:BenchState) = {
-    state.board.rows()(0)(0) = Live
-  }
-
-  @Benchmark
-  @BenchmarkMode(Array(Mode.Throughput))
-  @OutputTimeUnit(TimeUnit.MILLISECONDS)
-  def compareBoardIdx(state:BenchState) = {
-    state.board.rows()(0)(0) == Live
-  }
-
-  @Benchmark
-  @BenchmarkMode(Array(Mode.Throughput))
-  @OutputTimeUnit(TimeUnit.MILLISECONDS)
+  @OutputTimeUnit(TimeUnit.SECONDS)
   def neighboursBench(state:BenchState) = {
-    state.board.neighbours(0,0)
+    state.board.neighbours(1,1)
   }
 
   @Benchmark
   @BenchmarkMode(Array(Mode.Throughput))
-  @OutputTimeUnit(TimeUnit.MILLISECONDS)
+  @OutputTimeUnit(TimeUnit.SECONDS)
   def stepCellBench(state:BenchState) = {
     state.board.stepCell(0,0)
   }
 
   @Benchmark
   @BenchmarkMode(Array(Mode.Throughput))
-  @OutputTimeUnit(TimeUnit.MILLISECONDS)
+  @OutputTimeUnit(TimeUnit.SECONDS)
   def stepBoardBench(state:BenchState) = {
     state.board.step()
   }
