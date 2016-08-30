@@ -45,7 +45,7 @@ object GameOfLifeJS extends js.JSApp {
       for (col <- 0 until board.n) {
         val xcoord = col * cellWidth
         val ycoord = row * cellHeight
-        if (true) {
+        if (boardArr(row)(col) != boardArr2(row)(col)) {
           if (boardArr(row)(col) == Live) {
             ctx.fillStyle = "rgba(255,0,0,1)"
           } else {
