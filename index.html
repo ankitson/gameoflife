@@ -2,15 +2,69 @@
 <html>
 <head>
     <meta charset="UTF-8">
-    <title>The Scala.js Tutorial</title>
-    <script type="text/javascript" src="./js/target/scala-2.11/life-fastopt.js"></script>
+    <title>Game of Life</title>
 </head>
+<style>
+    #life {
+        position: relative;
+        padding-left: 0;
+        padding-right: 0;
+        margin-left: auto;
+        margin-right: auto;
+        display:block
+    }
+    #life-ui {
+        height: 900px;
+        width: 900px;
+        position: absolute;
+        z-index: 3
+    }
+    #life-grid {
+        height: 900px;
+        width: 900px;
+        position: absolute;
+        z-index: 2;
+    }
+    #life-board {
+        height: 900px;
+        width: 900px;
+        position: absolute;
+        z-index: 1;
+    }
+    #size {
+        position: absolute;
+        left: 910px;
+        z-index: 4;
+    }
+    #other {
+        position: absolute;
+        left:910px;
+        top:50px;
+    }
+
+</style>
 <body>
-<!-- Include Scala.js compiled code -->
 
-<canvas id="life" style="width: 500px; height: 500px;" width="500px" height="500px">
+<script type="text/javascript" src="life-opt.js"></script>
+<script type="text/javascript" src="stats.js"></script>
 
-</canvas>
+<div id="life" width="900" height="900">
+    <canvas id="life-board" width="900" height="900"></canvas>
+    <canvas id="life-grid" width="900" height="900"></canvas>
+    <canvas id="life-ui" width="900" height="900"></canvas>
+    <input type="text" id="size" value="10">
+    <p id="sizeShow"></p>
+</div>
+
+<div id="other">
+    <p id="fps"></p>
+</div>
+
+
+
+
+
+
 
 <script type="text/javascript">
     life.GameOfLifeJS().main();
