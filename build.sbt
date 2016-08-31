@@ -28,7 +28,6 @@ lazy val life = crossProject.in(file(".")).
       "-Xfuture",
       "-Yno-adapted-args",
       "-Ywarn-dead-code",
-      "-Ywarn-numeric-widen",
       "-Ywarn-value-discard",
       "-Ywarn-unused"
     )
