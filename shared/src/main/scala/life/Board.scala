@@ -4,10 +4,10 @@ import Board._
 
 import scala.util.Random
 class Board(val rowsArr:Array[Array[Cell]]) {
-  val rowsArr2 = rowsArr.clone().map(_.clone())
   var flag = true
   val n = rowsArr.length
   val m = rowsArr(0).length
+  val rowsArr2 = Array.ofDim[Cell](n,m)
 
   override def toString: String = {
     rows().map(row => row.mkString("")).mkString("\n")
@@ -23,7 +23,6 @@ class Board(val rowsArr:Array[Array[Cell]]) {
 
 
   private val cacheArr = Array.ofDim[Array[(Int,Int)]](n,m)
-//  private val cache = collection.mutable.Map.empty[(Int,Int), (List[(Int,Int)])]
   def neighbours(x:Int,y:Int) = {
     if (cacheArr(x)(y) == null) {
       cacheArr(x)(y) = Array(
@@ -33,11 +32,6 @@ class Board(val rowsArr:Array[Array[Cell]]) {
       ).filter{ case (i,j) => i >= 0 && i < n && j >= 0 && j < m}
     }
     cacheArr(x)(y)
-//    cache.getOrElseUpdate((x,y), List(
-//      (x-1,y-1), (x-1,y), (x-1,y+1),
-//      (x,y-1), (x,y+1),
-//      (x+1,y-1), (x+1,y), (x+1,y+1)
-//    ).filter{ case (i,j) => i >= 0 && i < n && j >= 0 && j < m} )
   }
 
   def step() = {
@@ -47,7 +41,7 @@ class Board(val rowsArr:Array[Array[Cell]]) {
         stepCell(row,col,board1,board2)
       }
     }
-    toggle()
+    flag = !flag
   }
 
 
