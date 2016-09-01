@@ -41,26 +41,25 @@ class Board(val rowsArr:Array[Array[Cell]]) {
   }
 
   def step() = {
+    val (board1,board2) = currentAndPrev()
     for (row <- 0 until n) {
       for (col <- 0 until m) {
-        stepCell(row,col)
+        stepCell(row,col,board1,board2)
       }
     }
     toggle()
   }
 
 
-  def stepCell(x:Int,y:Int)= {
-    val (board1,board2) = currentAndPrev()
-    val cell = board1(x)(y)
-
-    val aliveNbrs = neighbours(x,y).count{case (x,y) => board1(x)(y) == Live}
+  def stepCell(x:Int,y:Int,current:Array[Array[Cell]],next:Array[Array[Cell]])= {
+    val cell = current(x)(y)
+    val aliveNbrs = neighbours(x,y).count{case (i,j) => current(i)(j) == Live}
     (cell,aliveNbrs) match {
-      case (Live,a) if a < 2 => board2(x)(y) = Dead
-      case (Live,a) if a == 2 || a == 3 => board2(x)(y) = Live
-      case (Live,a) if a > 3 => board2(x)(y) = Dead
-      case (Dead,a) if a == 3 => board2(x)(y) = Live
-      case _ => board2(x)(y) = Dead
+      case (Live,a) if a < 2 => next(x)(y) = Dead
+      case (Live,a) if a == 2 || a == 3 => next(x)(y) = Live
+      case (Live,a) if a > 3 => next(x)(y) = Dead
+      case (Dead,a) if a == 3 => next(x)(y) = Live
+      case _ => next(x)(y) = Dead
     }
   }
 
