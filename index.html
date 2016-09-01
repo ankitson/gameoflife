@@ -11,35 +11,56 @@
         padding-right: 0;
         margin-left: auto;
         margin-right: auto;
-        display:block
+        margin-top: 50px;
+        display: block;
+        height: 500px;
+        width: 1000px;
     }
     #life-ui {
-        height: 900px;
-        width: 900px;
+        height: 500px;
+        width: 1000px;
         position: absolute;
-        z-index: 3
+        display: block;
+        z-index: 3;
     }
     #life-grid {
-        height: 900px;
-        width: 900px;
+        height: 499px;
+        width: 999px;
         position: absolute;
+        display: block;
         z-index: 2;
+
+        border: 1px solid black;
     }
     #life-board {
-        height: 900px;
-        width: 900px;
+        height: 500px;
+        width: 1000px;
         position: absolute;
+        display: block;
         z-index: 1;
     }
     #size {
         position: absolute;
-        left: 910px;
+        left: 1010px;
         z-index: 4;
     }
     #other {
         position: absolute;
-        left:910px;
-        top:50px;
+        left: 1010px;
+        top: 50px;
+    }
+    #density {
+        position: absolute;
+        left: 1010px;
+        top: 100px;
+    }
+    html, body {
+        width: 100%;
+        height: 100%;
+        margin: 0px;
+        padding: 0px;
+        border: 0px;
+        <!--overflow: hidden;-->
     }
 
 </style>
@@ -48,12 +69,13 @@
 <script type="text/javascript" src="./js/target/scala-2.11/life-opt.js"></script>
 <script type="text/javascript" src="./stats.js"></script>
 
-<div id="life" width="900" height="900">
-    <canvas id="life-board" width="900" height="900"></canvas>
-    <canvas id="life-grid" width="900" height="900"></canvas>
-    <canvas id="life-ui" width="900" height="900"></canvas>
+<div id="life">
+    <canvas id="life-board"></canvas>
+    <canvas id="life-grid"></canvas>
+    <canvas id="life-ui"></canvas>
     <input type="text" id="size" value="10">
     <p id="sizeShow"></p>
+    <input type="range" id="density" value="0.1" min="0" max="1" step="0.01">
 </div>
 
 <div id="other">
