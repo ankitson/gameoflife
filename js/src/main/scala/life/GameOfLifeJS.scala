@@ -1,163 +1,163 @@
 package life
 
 import life.Board.Live
+import org.scalajs.dom
+import org.scalajs.dom.ext.{Color, KeyCode}
+import org.scalajs.dom.raw.HTMLInputElement
+import org.scalajs.dom.KeyboardEvent
 
 import scala.scalajs.js
 import scala.scalajs.js.Any._
-import js.annotation.JSExport
-import org.scalajs.dom
-import org.scalajs.dom.{FocusEvent, KeyboardEvent}
-import org.scalajs.dom.ext.{Color, KeyCode}
-import org.scalajs.dom.raw.{HTMLCanvasElement, HTMLDivElement, HTMLInputElement}
+import scala.scalajs.js.annotation.JSExport
+import scala.util.{Failure, Success, Try}
+
+
+/**
+  is setInterval faster than reqAnimFrame? (shouldnt be)
+
+  seeing multiple animFrame calls in 1 frame in chrome is bad. means its slow. why?
+
+  Adding this reduces perf dramatically and screws up the fps monitor...??
+    dom.document.getElementById("life").asInstanceOf[HTMLDivElement].onkeypress = (event:KeyboardEvent) => {
+      if (event.keyCode == KeyCode.Right) draw(dom.window.performance.now())
+      if (event.keyCode == KeyCode.Space) toggleRun()
+      if (event.keyCode == KeyCode.N) board = Board.randomBoard(board.n,board.m,0.1); startRun()
+    }
+**/
 
 
 @JSExport
 object GameOfLifeJS extends js.JSApp {
-  var run = true
-  var board = Board.randomBoard(100,100,0.1)
-
-  val canvas = dom.document.getElementById("life-board").asInstanceOf[dom.html.Canvas]
-  canvas.width = canvas.offsetWidth.toInt
-  canvas.height = canvas.offsetHeight.toInt
-  val ctx = canvas.getContext("2d").asInstanceOf[dom.CanvasRenderingContext2D]
-
-  val gridCanvas = dom.document.getElementById("life-grid").asInstanceOf[dom.html.Canvas]
-  gridCanvas.width = gridCanvas.offsetWidth.toInt
-  gridCanvas.height = gridCanvas.offsetHeight.toInt
-  val gridCtx = gridCanvas.getContext("2d").asInstanceOf[dom.CanvasRenderingContext2D]
-
-  var cellWidth = canvas.width/board.m
-  var cellHeight = canvas.height/board.n
-
-  def init() = {
-    cellWidth = canvas.width/board.m
-    cellHeight= canvas.height/board.n
+  def initGrid(rows: Int, cols: Int) = {
+    val gridCanvas = dom.document.getElementById("life-grid").asInstanceOf[dom.html.Canvas]
+    gridCanvas.width = gridCanvas.offsetWidth.toInt
+    gridCanvas.height = gridCanvas.offsetHeight.toInt
+    val gridCtx = gridCanvas.getContext("2d").asInstanceOf[dom.CanvasRenderingContext2D]
 
     gridCtx.fillStyle = Color.White.toString()
-    gridCtx.clearRect(0,0,canvas.width,canvas.height)
+    gridCtx.strokeStyle = "rgba(220,220,220,1)"
+    gridCtx.lineWidth = 2
 
-    gridCtx.strokeStyle = Color.Black.toString()
-    gridCtx.lineWidth = 1
-    for (startX <- 0 to canvas.width by cellWidth) {
+    gridCtx.clearRect(0, 0, gridCanvas.width, gridCanvas.height)
+    for (start <- 0.0 to gridCanvas.height by gridCanvas.height.toDouble/rows) {
       gridCtx.beginPath()
-      gridCtx.moveTo(startX,0)
-      gridCtx.lineTo(startX,canvas.height)
+      gridCtx.moveTo(0, start)
+      gridCtx.lineTo(gridCanvas.width, start)
       gridCtx.closePath()
       gridCtx.stroke()
     }
-    for (startY <- 0 to canvas.height by cellHeight) {
+    for (start <- 0.0 to gridCanvas.width by gridCanvas.width.toDouble/cols) {
       gridCtx.beginPath()
-      gridCtx.moveTo(0,startY)
-      gridCtx.lineTo(canvas.width,startY)
+      gridCtx.moveTo(start, 0)
+      gridCtx.lineTo(start, gridCanvas.height)
       gridCtx.closePath()
       gridCtx.stroke()
     }
-
-    ctx.fillStyle = Color.White.toString()
-    ctx.clearRect(0,0,canvas.width,canvas.height)
-    ctx.fillRect(0,0,canvas.width,canvas.height)
+    gridCtx
   }
 
+  def initBoard() = {
+    val canvas = dom.document.getElementById("life-board").asInstanceOf[dom.html.Canvas]
+    canvas.width = canvas.offsetWidth.toInt
+    canvas.height = canvas.offsetHeight.toInt
+    val ctx = canvas.getContext("2d").asInstanceOf[dom.CanvasRenderingContext2D]
 
-  var stats = js.Dynamic.newInstance(js.Dynamic.global.Stats)()
-  stats.showPanel( 1 ); // 0: fps, 1: ms, 2: mb, 3+: custom
-  dom.document.body.appendChild( stats.dom.asInstanceOf[org.scalajs.dom.raw.Node] )
+    ctx.fillStyle = Color.White.toString()
+    ctx.clearRect(0, 0, canvas.width, canvas.height)
+    ctx.fillRect(0, 0, canvas.width, canvas.height)
+    ctx
+  }
 
-  var lastCall = 0d
-  val fpsDisplay = dom.document.getElementById("fps")
+  def init(board:Board) = {
+    val gridCtx = initGrid(board.m,board.n)
+    val boardCtx = initBoard()
+    cellWidth = boardCtx.canvas.width.toDouble / board.n
+    cellHeight = boardCtx.canvas.height.toDouble / board.m
+  }
 
-  var animFrameHandle = 0
+  var cellWidth: Double = _
+  var cellHeight: Double = _
 
-  def draw(timestamp:Double): Unit = {
-    println("draw loop running")
-    if (lastCall == 0) {
-      lastCall = timestamp
-    } else {
+  def main() = {
+    var run = true
+    var lastCall = 0d
+    val fpsDisplay = dom.document.getElementById("fps")
+    var animFrameHandle = 0
+
+    var board = Board.randomBoard(10, 10, 0.1)
+    initGrid(board.m, board.n)
+    val ctx = initBoard()
+
+    val stats = js.Dynamic.newInstance(js.Dynamic.global.Stats)()
+    stats.showPanel(1); // 0: fps, 1: ms, 2: mb, 3+: custom
+    dom.document.body.appendChild(stats.dom.asInstanceOf[org.scalajs.dom.raw.Node])
+
+    def draw(cellWidth: Double, cellHeight: Double)(timestamp: Double): Unit = {
+      stats.begin()
       val duration = timestamp - lastCall
-      //println(f"setting duration to ${timestamp - lastCall}")
-      fpsDisplay.innerHTML = duration.toString + "ms/frame"
+      fpsDisplay.innerHTML = duration.toString + "ms/frame" + "<br>" + (1000 / duration) + "frames/sec"
       lastCall = timestamp
-    }
-    stats.begin()
-    val (boardArr, boardArr2) = board.currentAndPrev()
-    for (row <- 0 until board.m) {
-      for (col <- 0 until board.n) {
-        val xcoord = col * cellWidth
-        val ycoord = row * cellHeight
-        if (boardArr(row)(col) != boardArr2(row)(col)) {
+
+      val (boardArr, boardArr2) = board.currentAndPrev()
+      for (row <- 0 until board.m; col <- 0 until board.n) {
+        val cellChanged = boardArr(row)(col) != boardArr2(row)(col)
+        if (cellChanged) {
           if (boardArr(row)(col) == Live) {
             ctx.fillStyle = "rgba(255,0,0,1)"
           } else {
             ctx.fillStyle = "rgba(255,255,255,1)"
           }
-          val startX = xcoord
-          val startY = ycoord
-          val width = cellWidth
-          val height = cellHeight
-          ctx.fillRect(startX, startY, width, height)
+
+          val startX = (cellWidth * col) + 1
+          val startY = (cellHeight * row) + 1
+
+          ctx.fillRect(startX, startY, cellWidth, cellHeight)
+        }
+      }
+      board.step()
+      if (run) animFrameHandle = dom.window.requestAnimationFrame(draw(cellWidth, cellHeight) _)
+      stats.end()
+    }
+
+    def bindListeners() = {
+      dom.document.getElementById("size").asInstanceOf[HTMLInputElement].onkeypress = { (evt: KeyboardEvent) =>
+        evt.keyCode match {
+          case KeyCode.Enter =>
+            Try(dom.document.getElementById("size").asInstanceOf[HTMLInputElement].value.toInt) match {
+              case Failure(_) => ()
+              case Success(size) =>
+                dom.document.getElementById("sizeShow").innerHTML = size.toString
+                board = Board.randomBoard(size, size)
+                refreshBoard(board)
+            }
+          case _ => ()
+        }
+      }
+
+      def refreshBoard(board:Board) = {
+        dom.window.cancelAnimationFrame(animFrameHandle)
+        init(board)
+        dom.window.requestAnimationFrame(draw(cellWidth,cellHeight) _)
+      }
+
+      dom.window.onkeypress = { (evt: KeyboardEvent) =>
+        evt.keyCode match {
+          case KeyCode.Space =>
+            evt.preventDefault()
+            run = !run
+            if (run) dom.window.requestAnimationFrame(draw(cellWidth, cellHeight) _)
+            else dom.window.cancelAnimationFrame(animFrameHandle)
+          case KeyCode.N | 110 => //upper or lowercase N
+            evt.preventDefault()
+            if (!run) draw(cellWidth,cellHeight)(System.currentTimeMillis())
+          case _ => ()
         }
       }
     }
 
-    board.step()
-    stats.end()
+    bindListeners()
 
-    if (run) animFrameHandle = dom.window.requestAnimationFrame(draw _)
+    dom.window.requestAnimationFrame(draw(cellWidth, cellHeight) _)
   }
 
-  def main(): Unit = {
-    println("hello from scalajs")
-
-    //var drawerHandle = 0
-
-    //TODO: is setInterval faster than reqAnimFrame? (shouldnt be)
-
-    //TODO: grid layout bug
-
-    //TODO: Adding this reduces perf dramatically and screws up the fps monitor...??idonteven
-//    dom.document.getElementById("life").asInstanceOf[HTMLDivElement].onkeypress = (event:KeyboardEvent) => {
-//      if (event.keyCode == KeyCode.Right) draw(dom.window.performance.now())
-//      if (event.keyCode == KeyCode.Space) toggleRun()
-//      if (event.keyCode == KeyCode.N) board = Board.randomBoard(board.n,board.m,0.1); startRun()
-//    }
-
-
-    def toggleRun() = { if (run) stopRun() else animFrameHandle = startRun() }
-
-    def startRun() = {
-      run = true
-      init()
-      //drawerHandle = dom.window.setInterval(draw _, 0)
-      dom.window.requestAnimationFrame(draw _)
-    }
-
-    def stopRun() = {
-      //dom.window.clearInterval(drawerHandle)
-      run = false
-      dom.window.cancelAnimationFrame(animFrameHandle)
-    }
-
-    dom.document.getElementById("size").asInstanceOf[HTMLInputElement].onfocus = {(_:FocusEvent) =>
-      dom.document.getElementById("size").asInstanceOf[HTMLInputElement].value =  ""
-    }
-    dom.document.getElementById("size").asInstanceOf[HTMLInputElement].onkeypress = {(evt:KeyboardEvent) =>
-      evt.keyCode match {
-        case KeyCode.Enter =>
-          stopRun()
-          try {
-            val newSize = dom.document.getElementById("size").asInstanceOf[HTMLInputElement].value.toInt
-            dom.document.getElementById("sizeShow").innerHTML = newSize.toString
-            board = Board.randomBoard(newSize, newSize)
-            startRun()
-          } catch {
-            case _ => ()
-          }
-        case _ => ()
-      }
-
-    }
-
-    //dom.window.setInterval(draw _,1000/60)
-    startRun()
-  }
 }
