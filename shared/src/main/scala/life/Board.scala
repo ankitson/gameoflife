@@ -21,7 +21,6 @@ class Board(val rowsArr:Array[Array[Cell]]) {
 
   def currentAndPrev() = { if (flag) (rowsArr,rowsArr2) else (rowsArr2,rowsArr)}
 
-
   private val cacheArr = Array.ofDim[Array[(Int,Int)]](n,m)
   def neighbours(x:Int,y:Int) = {
     if (cacheArr(x)(y) == null) {

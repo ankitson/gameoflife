@@ -13,51 +13,40 @@ import scala.util.{Failure, Success, Try}
 
 
 /**
-  is setInterval faster than reqAnimFrame? (shouldnt be)
-
   seeing multiple animFrame calls in 1 frame in chrome is bad. means its slow. why?
-
-  Adding this reduces perf dramatically and screws up the fps monitor...??
-    dom.document.getElementById("life").asInstanceOf[HTMLDivElement].onkeypress = (event:KeyboardEvent) => {
-      if (event.keyCode == KeyCode.Right) draw(dom.window.performance.now())
-      if (event.keyCode == KeyCode.Space) toggleRun()
-      if (event.keyCode == KeyCode.N) board = Board.randomBoard(board.n,board.m,0.1); startRun()
-    }
 **/
 
 
 @JSExport
 object GameOfLifeJS extends js.JSApp {
-  def initGrid(rows: Int, cols: Int) = {
-    val gridCanvas = dom.document.getElementById("life-grid").asInstanceOf[dom.html.Canvas]
-    gridCanvas.width = gridCanvas.offsetWidth.toInt
-    gridCanvas.height = gridCanvas.offsetHeight.toInt
-    val gridCtx = gridCanvas.getContext("2d").asInstanceOf[dom.CanvasRenderingContext2D]
+  def initGrid(canvas: dom.html.Canvas, rows: Int, cols: Int) = {
+    canvas.width = canvas.offsetWidth.toInt
+    canvas.height = canvas.offsetHeight.toInt
+    val gridCtx = canvas.getContext("2d").asInstanceOf[dom.CanvasRenderingContext2D]
 
     gridCtx.fillStyle = Color.White.toString()
     gridCtx.strokeStyle = "rgba(220,220,220,1)"
     gridCtx.lineWidth = 2
 
-    gridCtx.clearRect(0, 0, gridCanvas.width, gridCanvas.height)
-    for (start <- 0.0 to gridCanvas.height by gridCanvas.height.toDouble/rows) {
+    gridCtx.clearRect(0, 0, canvas.width, canvas.height)
+    for (start <- 0.0 to canvas.height by canvas.height.toDouble/rows) {
       gridCtx.beginPath()
       gridCtx.moveTo(0, start)
-      gridCtx.lineTo(gridCanvas.width, start)
+      gridCtx.lineTo(canvas.width, start)
       gridCtx.closePath()
       gridCtx.stroke()
     }
-    for (start <- 0.0 to gridCanvas.width by gridCanvas.width.toDouble/cols) {
+    for (start <- 0.0 to canvas.width by canvas.width.toDouble/cols) {
       gridCtx.beginPath()
       gridCtx.moveTo(start, 0)
-      gridCtx.lineTo(start, gridCanvas.height)
+      gridCtx.lineTo(start, canvas.height)
       gridCtx.closePath()
       gridCtx.stroke()
     }
     gridCtx
   }
 
-  def initBoard() = {
-    val canvas = dom.document.getElementById("life-board").asInstanceOf[dom.html.Canvas]
+  def initBoard(canvas:dom.html.Canvas) = {
     canvas.width = canvas.offsetWidth.toInt
     canvas.height = canvas.offsetHeight.toInt
     val ctx = canvas.getContext("2d").asInstanceOf[dom.CanvasRenderingContext2D]
@@ -68,31 +57,17 @@ object GameOfLifeJS extends js.JSApp {
     ctx
   }
 
-  def init(board:Board) = {
-    val gridCtx = initGrid(board.m,board.n)
-    val boardCtx = initBoard()
-    cellWidth = boardCtx.canvas.width.toDouble / board.n
-    cellHeight = boardCtx.canvas.height.toDouble / board.m
-  }
 
   var cellWidth: Double = _
   var cellHeight: Double = _
+  var animFrameHandle = 0
+  val stats = js.Dynamic.newInstance(js.Dynamic.global.Stats)()
+  var run = true
+  var lastCall = 0d
+  val fpsDisplay = dom.document.getElementById("fps")
 
-  def main() = {
-    var run = true
-    var lastCall = 0d
-    val fpsDisplay = dom.document.getElementById("fps")
-    var animFrameHandle = 0
-
-    var board = Board.randomBoard(10, 10, 0.1)
-    initGrid(board.m, board.n)
-    val ctx = initBoard()
-
-    val stats = js.Dynamic.newInstance(js.Dynamic.global.Stats)()
-    stats.showPanel(1); // 0: fps, 1: ms, 2: mb, 3+: custom
-    dom.document.body.appendChild(stats.dom.asInstanceOf[org.scalajs.dom.raw.Node])
-
-    def draw(cellWidth: Double, cellHeight: Double)(timestamp: Double): Unit = {
+  def drawer(board: Board,boardCtx: dom.CanvasRenderingContext2D,cellWidth: Double,cellHeight: Double) = {
+    def draw(timestamp: Double): Unit = {
       stats.begin()
       val duration = timestamp - lastCall
       fpsDisplay.innerHTML = duration.toString + "ms/frame" + "<br>" + (1000 / duration) + "frames/sec"
@@ -103,61 +78,78 @@ object GameOfLifeJS extends js.JSApp {
         val cellChanged = boardArr(row)(col) != boardArr2(row)(col)
         if (cellChanged) {
           if (boardArr(row)(col) == Live) {
-            ctx.fillStyle = "rgba(255,0,0,1)"
+            boardCtx.fillStyle = "rgba(255,0,0,1)"
           } else {
-            ctx.fillStyle = "rgba(255,255,255,1)"
+            boardCtx.fillStyle = "rgba(255,255,255,1)"
           }
 
           val startX = (cellWidth * col) + 1
           val startY = (cellHeight * row) + 1
 
-          ctx.fillRect(startX, startY, cellWidth, cellHeight)
+          boardCtx.fillRect(startX, startY, cellWidth, cellHeight)
         }
       }
       board.step()
-      if (run) animFrameHandle = dom.window.requestAnimationFrame(draw(cellWidth, cellHeight) _)
+      if (run) animFrameHandle = dom.window.requestAnimationFrame(draw _)
       stats.end()
     }
+    draw _
+  }
 
-    def bindListeners() = {
-      dom.document.getElementById("size").asInstanceOf[HTMLInputElement].onkeypress = { (evt: KeyboardEvent) =>
-        evt.keyCode match {
-          case KeyCode.Enter =>
-            Try(dom.document.getElementById("size").asInstanceOf[HTMLInputElement].value.toInt) match {
-              case Failure(_) => ()
-              case Success(size) =>
-                dom.document.getElementById("sizeShow").innerHTML = size.toString
-                board = Board.randomBoard(size, size)
-                refreshBoard(board)
-            }
-          case _ => ()
-        }
-      }
+  def initAll(boardCanvas:dom.html.Canvas,gridCanvas:dom.html.Canvas,board:Board) = {
+    val gridCtx = initGrid(gridCanvas,board.m,board.n)
+    val boardCtx = initBoard(boardCanvas)
+    run = false
+    dom.window.cancelAnimationFrame(animFrameHandle)
+    cellWidth = boardCtx.canvas.width.toDouble / board.n
+    cellHeight = boardCtx.canvas.height.toDouble / board.m
+    val draw = drawer(board,boardCtx,cellWidth,cellHeight)
+    animFrameHandle = dom.window.requestAnimationFrame(draw)
+    run = true
+    draw
+  }
 
-      def refreshBoard(board:Board) = {
-        dom.window.cancelAnimationFrame(animFrameHandle)
-        init(board)
-        dom.window.requestAnimationFrame(draw(cellWidth,cellHeight) _)
-      }
-
-      dom.window.onkeypress = { (evt: KeyboardEvent) =>
-        evt.keyCode match {
-          case KeyCode.Space =>
-            evt.preventDefault()
-            run = !run
-            if (run) dom.window.requestAnimationFrame(draw(cellWidth, cellHeight) _)
-            else dom.window.cancelAnimationFrame(animFrameHandle)
-          case KeyCode.N | 110 => //upper or lowercase N
-            evt.preventDefault()
-            if (!run) draw(cellWidth,cellHeight)(System.currentTimeMillis())
-          case _ => ()
-        }
+  def bindListeners() = {
+    dom.document.getElementById("size").asInstanceOf[HTMLInputElement].onkeypress = { (evt: KeyboardEvent) =>
+      evt.keyCode match {
+        case KeyCode.Enter =>
+          Try(dom.document.getElementById("size").asInstanceOf[HTMLInputElement].value.toInt) match {
+            case Failure(_) => ()
+            case Success(size) =>
+              dom.document.getElementById("sizeShow").innerHTML = size.toString
+              val board = Board.randomBoard(size, size)
+              initAll(
+                dom.document.getElementById("life-board").asInstanceOf[dom.html.Canvas],
+                dom.document.getElementById("life-grid").asInstanceOf[dom.html.Canvas],
+                board
+              )
+          }
+        case _ => ()
       }
     }
 
-    bindListeners()
+    dom.window.onkeypress = (event:KeyboardEvent) => {
+      if (event.keyCode == KeyCode.N || event.keyCode == 110) {
+        val size = dom.document.getElementById("size").asInstanceOf[HTMLInputElement].value.toInt
+        val board = Board.randomBoard(size,size,0.1)
+        initAll(
+          dom.document.getElementById("life-board").asInstanceOf[dom.html.Canvas],
+          dom.document.getElementById("life-grid").asInstanceOf[dom.html.Canvas],
+          board
+        )
+      }
+    }
 
-    dom.window.requestAnimationFrame(draw(cellWidth, cellHeight) _)
+
+  }
+  def main(): Unit = {
+    val boardCanvas = dom.document.getElementById("life-board").asInstanceOf[dom.html.Canvas]
+    val gridCanvas = dom.document.getElementById("life-grid").asInstanceOf[dom.html.Canvas]
+
+    bindListeners()
+    stats.showPanel(1); // 0: fps, 1: ms, 2: mb, 3+: custom
+    dom.document.body.appendChild(stats.dom.asInstanceOf[org.scalajs.dom.raw.Node])
+    animFrameHandle = dom.window.requestAnimationFrame(initAll(boardCanvas,gridCanvas,Board.randomBoard(10,10,0.1)))
   }
 
 }
