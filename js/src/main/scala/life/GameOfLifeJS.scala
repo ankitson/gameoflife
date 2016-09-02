@@ -13,20 +13,16 @@ import scala.scalajs.js
 import scala.scalajs.js.Any._
 import scala.scalajs.js.annotation.JSExport
 
-
-class GameOfLifeCanvas(gridCanvas: dom.html.Canvas, cellCanvas: dom.html.Canvas,
+class GameOfLifeCanvas(gridCanvas: dom.html.Canvas, cellCanvas: dom.html.Canvas,board:Board,
                        options: mutable.Map[ConfigOption,Boolean] = mutable.Map(HighlightVisited -> false)
-                      ) extends Game(List(gridCanvas,cellCanvas)) {
+                      ) {
 
   var cellWidth: Double = _
   var cellHeight: Double = _
   val stats = js.Dynamic.newInstance(js.Dynamic.global.Stats)()
-  var run = true
   var lastCall = 0d
   val fpsDisplay = dom.document.getElementById("fps")
-  var board: Board = _
   var boardCtx: dom.CanvasRenderingContext2D = _
-
   var visited: collection.mutable.Set[(Int,Int)] = _
 
   private def initGrid(canvas: dom.html.Canvas, rows: Int, cols: Int) = {
@@ -78,60 +74,54 @@ class GameOfLifeCanvas(gridCanvas: dom.html.Canvas, cellCanvas: dom.html.Canvas,
     dom.document.body.appendChild(stats.dom.asInstanceOf[org.scalajs.dom.raw.Node])
   }
 
-  def init(newBoard:Board): Unit = {
-    board = newBoard
+  def init(): Unit = {
     visited = collection.mutable.Set[(Int,Int)]()
     initAll(cellCanvas,gridCanvas,board)
-    val oldRun = run
-    run = true
-    step(System.currentTimeMillis())
-    run = oldRun
   }
+
 
   def draw(timestamp: Double): Unit = {
-    if (run) {
-      stats.begin()
-      val duration = timestamp - lastCall
-      val fps = 1000 / duration
-      fpsDisplay.innerHTML = duration.toString + "ms/frame" + "<br>" + f"${fps}%1.2f frames/sec"
-      lastCall = timestamp
+    stats.begin()
+    val duration = timestamp - lastCall
+    val fps = 1000 / duration
+    fpsDisplay.innerHTML = duration.toString + "ms/frame" + "<br>" + f"${fps}%1.2f frames/sec"
+    lastCall = timestamp
 
-      val (boardArr, boardArr2) = board.currentAndPrev()
-      for (row <- 0 until board.m; col <- 0 until board.n) {
-        val cellChanged = boardArr(row)(col) != boardArr2(row)(col)
-        if (cellChanged) {
-          if (boardArr(row)(col) == Live) {
-            visited.add((row, col))
-            boardCtx.fillStyle = "rgba(255,0,0,1)"
-          } else if (options(HighlightVisited) && visited.contains((row, col))) {
-            boardCtx.fillStyle = "rgba(0,200,50,0.3)"
-          } else {
-            boardCtx.fillStyle = "rgba(255,255,255,1)"
-          }
-
-          val startX = cellWidth * col
-          val startY = cellHeight * row
-
-          boardCtx.clearRect(startX, startY, cellWidth, cellHeight)
-          boardCtx.fillRect(startX, startY, cellWidth, cellHeight)
+    val (boardArr, boardArr2) = board.currentAndPrev()
+    for (row <- 0 until board.n; col <- 0 until board.m) {
+      val cellChanged = boardArr(row)(col) != boardArr2(row)(col)
+      if (cellChanged) {
+        if (boardArr(row)(col) == Live) {
+          visited.add((row, col))
+          boardCtx.fillStyle = "rgba(255,0,0,1)"
+        } else if (options(HighlightVisited) && visited.contains((row, col))) {
+          boardCtx.fillStyle = "rgba(0,200,50,0.3)"
+        } else {
+          boardCtx.fillStyle = "rgba(255,255,255,1)"
         }
+
+        val startX = cellWidth * col
+        val startY = cellHeight * row
+
+        boardCtx.clearRect(startX, startY, cellWidth, cellHeight)
+        boardCtx.fillRect(startX, startY, cellWidth, cellHeight)
       }
-      stats.end()
     }
+    stats.end()
   }
 
-  override def step(time:Double): Unit = {
-    board.step()
+  def step(time:Double): Unit = {
     draw(time)
+    board.step()
   }
 
-  override def update(key: Event): Unit = key match {
+  def update(key: Event): Unit = key match {
     case kbd: KeyboardEvent => kbd.charCode match {
-      case 32 => key.preventDefault(); run = !run
       case 'v' | 'V' => options(HighlightVisited) = !options(HighlightVisited)
     }
   }
 
+  init()
 }
 
 @JSExport
@@ -143,22 +133,28 @@ object GameOfLifeJS extends js.JSApp {
   object Scheduler {
     var handle = (0,true)
     def schedule[A](fn: Double=>A, every: Duration): Int = {
-      cancel()
+      val oldHandle = handle
       if (every.isFinite()) {
+        println("scheduling setInterval")
         handle = (dom.window.setInterval(() => fn(System.currentTimeMillis()),every.toMillis),true)
+        cancel(oldHandle)
       } else {
+        println("scheduling requestAnimFram")
         handle = (dom.window.requestAnimationFrame{(ts:Double) =>
-          def x(t:Double): Unit = {fn(ts); handle = (dom.window.requestAnimationFrame(x _),false)}
+          def x(t:Double): Unit = {fn(t); handle = (dom.window.requestAnimationFrame(x _),false)}
           x(ts)
         },false)
+        cancel(oldHandle)
       }
       handle._1
     }
-    def cancel() = {
+    def cancel(handle:(Int,Boolean)=handle) = {
       if (handle._2) { dom.window.clearInterval(handle._1)}
       else { dom.window.cancelAnimationFrame(handle._1)}
     }
   }
+
+  var board: Board = _
 
   def main(): Unit = {
     val boardCanvas = dom.document.getElementById("life-board").asInstanceOf[dom.html.Canvas]
@@ -166,25 +162,24 @@ object GameOfLifeJS extends js.JSApp {
     val fpsLimit = dom.document.getElementById("fpsLimit").asInstanceOf[dom.html.Input]
     val sizeSlider = dom.document.getElementById("size").asInstanceOf[dom.html.Input]
 
-    val life = new GameOfLifeCanvas(gridCanvas,boardCanvas,mutable.Map(HighlightVisited -> true))
+    board = Board.randomBoard(sizeSlider.value.toInt,sizeSlider.value.toInt)
+    var life = new GameOfLifeCanvas(gridCanvas,boardCanvas,board,mutable.Map(HighlightVisited -> true))
 
     def stepTime(): Duration = {
-      if (fpsLimit.value.toInt == 121) Duration.Inf else 1000/fpsLimit.value.toDouble millis
+      if (fpsLimit.value.toInt == 61) Duration.Inf else 1000/fpsLimit.value.toDouble millis
     }
 
-    var board = Board.randomBoard(sizeSlider.value.toInt,sizeSlider.value.toInt)
-    life.init(board)
     Scheduler.schedule(life.step,stepTime())
 
     def renderBoard(size:Int) = {
-      board = Board.randomBoard(size,size,0.1)
-      life.init(board)
+      Scheduler.cancel()
+      board = Board.randomBoard(size,size)
+      life = new GameOfLifeCanvas(gridCanvas,boardCanvas,board,mutable.Map(HighlightVisited -> true))
       Scheduler.schedule(life.step,stepTime())
     }
 
     def dispatchChangeEvent(elem:HTMLElement) = {
-      val evt = dom.document.createEvent("Event")
-      evt.initEvent("change",true,true)
+      val evt = js.Dynamic.newInstance(js.Dynamic.global.Event)("change").asInstanceOf[Event]
       elem.dispatchEvent(evt)
     }
 
@@ -199,6 +194,8 @@ object GameOfLifeJS extends js.JSApp {
         event.preventDefault()
         sizeSlider.value = Math.max(sizeSlider.value.toInt - 1,sizeSlider.min.toInt).toString
         dispatchChangeEvent(sizeSlider)
+      case 'f' | 'F' =>
+        life.step(System.currentTimeMillis())
       case _ => life.update(event)
 
     }

@@ -7,7 +7,7 @@ class Board(val rowsArr:Array[Array[Cell]]) {
   var flag = true
   val n = rowsArr.length
   val m = rowsArr(0).length
-  val rowsArr2 = Array.ofDim[Cell](n,m)
+  val rowsArr2 = Array.fill[Cell](n,m)(Dead)
 
   override def toString: String = {
     rows().map(row => row.mkString("")).mkString("\n")
