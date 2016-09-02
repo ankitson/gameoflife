@@ -4,8 +4,8 @@ import life.Board.Live
 import life.GameOfLifeJS.{ConfigOption, HighlightVisited}
 import org.scalajs.dom
 import org.scalajs.dom.ext.Color
-import org.scalajs.dom.raw.HTMLElement
-import org.scalajs.dom.{Event, KeyboardEvent}
+import org.scalajs.dom.html.Div
+import org.scalajs.dom._
 
 import scala.collection._
 import scala.concurrent.duration._
@@ -71,7 +71,11 @@ class GameOfLifeCanvas(gridCanvas: dom.html.Canvas, cellCanvas: dom.html.Canvas,
     cellWidth = boardCtx.canvas.width.toDouble / board.n
     cellHeight = boardCtx.canvas.height.toDouble / board.m
     stats.showPanel(1); // 0: fps, 1: ms, 2: mb, 3+: custom
-    dom.document.body.appendChild(stats.dom.asInstanceOf[org.scalajs.dom.raw.Node])
+    val node = stats.dom.asInstanceOf[org.scalajs.dom.Element]
+    node.setAttribute("id","stats-monitor")
+    node.removeAttribute("style")
+    dom.document.getElementById("life-ui").appendChild(node)
+
   }
 
   def init(): Unit = {
@@ -84,7 +88,7 @@ class GameOfLifeCanvas(gridCanvas: dom.html.Canvas, cellCanvas: dom.html.Canvas,
     stats.begin()
     val duration = timestamp - lastCall
     val fps = 1000 / duration
-    fpsDisplay.innerHTML = duration.toString + "ms/frame" + "<br>" + f"${fps}%1.2f frames/sec"
+    fpsDisplay.innerHTML =  f"${duration}%1.2f ms/frame" + "<br>" + f"${fps}%1.2f frames/sec"
     lastCall = timestamp
 
     val (boardArr, boardArr2) = board.currentAndPrev()
@@ -135,11 +139,9 @@ object GameOfLifeJS extends js.JSApp {
     def schedule[A](fn: Double=>A, every: Duration): Int = {
       val oldHandle = handle
       if (every.isFinite()) {
-        println("scheduling setInterval")
         handle = (dom.window.setInterval(() => fn(System.currentTimeMillis()),every.toMillis),true)
         cancel(oldHandle)
       } else {
-        println("scheduling requestAnimFram")
         handle = (dom.window.requestAnimationFrame{(ts:Double) =>
           def x(t:Double): Unit = {fn(t); handle = (dom.window.requestAnimationFrame(x _),false)}
           x(ts)
@@ -203,6 +205,13 @@ object GameOfLifeJS extends js.JSApp {
     fpsLimit.onchange = (_:Event) => Scheduler.schedule(life.step,stepTime())
 
     sizeSlider.onchange = (_:Event) => renderBoard(sizeSlider.value.toInt)
+
+    dom.document.getElementById("life-ui").asInstanceOf[Div].onmouseenter = { (_:MouseEvent) =>
+      dom.document.getElementById("life-ui").asInstanceOf[Div].setAttribute("class","ui-show-translucent")
+    }
+    dom.document.getElementById("life-ui").asInstanceOf[Div].onmouseleave = { (_:MouseEvent) =>
+      dom.document.getElementById("life-ui").asInstanceOf[Div].setAttribute("class","ui-hide")
+    }
 
   }
 
