@@ -1,6 +1,6 @@
 import sbt.Keys._
 
-name := "Game of Life root project"
+name := "Game of Life"
 
 scalaVersion in ThisBuild := "2.11.8"
 
@@ -32,19 +32,16 @@ lazy val life = crossProject.in(file(".")).
       "-Ywarn-unused"
     )
   ).jvmSettings(
-    // bl
   ).jsSettings(
     libraryDependencies ++= Seq(
       "org.scala-js" %%% "scalajs-dom" % "0.9.0"
     )
-    // Add JS-specific settings here
   ).enablePlugins(JmhPlugin)
 
 lazy val lifeJVM = life.jvm.settings(
     sourceDirectory in Jmh := (sourceDirectory in Test).value,
     classDirectory in Jmh := (classDirectory in Test).value,
     dependencyClasspath in Jmh := (dependencyClasspath in Test).value,
-    // rewire tasks, so that 'jmh:run' automatically invokes 'jmh:compile' (otherwise a clean 'jmh:run' would fail)
     compile in Jmh <<= (compile in Jmh) dependsOn (compile in Test),
     run in Jmh <<= (run in Jmh) dependsOn (Keys.compile in Jmh)
 ).enablePlugins(JmhPlugin)

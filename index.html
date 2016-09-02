@@ -13,43 +13,42 @@
         margin-right: auto;
         margin-top: 50px;
         display: block;
-        height: 500px;
-        width: 1000px;
+        height: 680.39px;
+        width: 1138.5px;
     }
     #life-ui {
-        height: 500px;
-        width: 1000px;
+        height: 100%;
+        width: 100%;
         position: absolute;
         display: block;
         z-index: 3;
     }
     #life-grid {
-        height: 499px;
-        width: 999px;
+        height: 100%;
+        width: 100%;
         position: absolute;
         display: block;
         z-index: 2;
-        border: 1px solid black;
+        <!--border: 1px solid black;-->
     }
     #life-board {
-        height: 500px;
-        width: 1000px;
+        height: 100%;
+        width: 100%;
         position: absolute;
         display: block;
         z-index: 1;
     }
     #size {
-        position: absolute;
+        <!--position: absolute;-->
         left: 1010px;
         z-index: 4;
     }
     #other {
-        position: absolute;
+        <!--position: absolute;-->
         left: 1010px;
         top: 50px;
     }
     #density {
-        position: absolute;
         left: 1010px;
         top: 100px;
     }
@@ -59,7 +58,8 @@
         margin: 0px;
         padding: 0px;
         border: 0px;
-        <!--overflow: hidden;-->
+
+        background-color: #FFFFFF;
     }
 
 </style>
@@ -72,13 +72,14 @@
     <canvas id="life-board"></canvas>
     <canvas id="life-grid"></canvas>
     <canvas id="life-ui"></canvas>
-    <input type="text" id="size" value="10">
-    <p id="sizeShow"></p>
-    <input type="range" id="density" value="0.1" min="0" max="1" step="0.01">
 </div>
 
 <div id="other">
     <p id="fps"></p>
+    <input type="range" id="density" value="0.1" min="0" max="1" step="0.01">
+    <input type="range" id="size" value="13" min="1" max="300" step="1">
+    <input type="range" id="fpsLimit" value="60" min="1" max="120" step="1">
+    <p id="sizeShow"></p>
 </div>
 
 

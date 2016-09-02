@@ -4,7 +4,7 @@ import java.io.PrintWriter
 
 import Board._
 
-object GameOfLife {
+object GameOfLifeConsole {
 
   def main(args:Array[String]): Unit = {
     val board = randomBoard(10,10)
