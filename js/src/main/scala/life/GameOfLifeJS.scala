@@ -163,9 +163,10 @@ object GameOfLifeJS extends js.JSApp {
     val gridCanvas = dom.document.getElementById("life-grid").asInstanceOf[dom.html.Canvas]
     val fpsLimit = dom.document.getElementById("fpsLimit").asInstanceOf[dom.html.Input]
     val sizeSlider = dom.document.getElementById("size").asInstanceOf[dom.html.Input]
+    var highlightVisited = true
 
     board = Board.randomBoard(sizeSlider.value.toInt,sizeSlider.value.toInt)
-    var life = new GameOfLifeCanvas(gridCanvas,boardCanvas,board,mutable.Map(HighlightVisited -> true))
+    var life = new GameOfLifeCanvas(gridCanvas,boardCanvas,board,mutable.Map(HighlightVisited -> highlightVisited))
 
     def stepTime(): Duration = {
       if (fpsLimit.value.toInt == 61) Duration.Inf else 1000/fpsLimit.value.toDouble millis
@@ -173,14 +174,15 @@ object GameOfLifeJS extends js.JSApp {
 
     Scheduler.schedule(life.step,stepTime())
 
+
     def renderBoard(size:Int) = {
       Scheduler.cancel()
       board = Board.randomBoard(size,size)
-      life = new GameOfLifeCanvas(gridCanvas,boardCanvas,board,mutable.Map(HighlightVisited -> true))
+      life = new GameOfLifeCanvas(gridCanvas,boardCanvas,board,mutable.Map(HighlightVisited -> highlightVisited))
       Scheduler.schedule(life.step,stepTime())
     }
 
-    def dispatchChangeEvent(elem:HTMLElement) = {
+    def dispatchChangeEvent(elem:Element) = {
       val evt = js.Dynamic.newInstance(js.Dynamic.global.Event)("change").asInstanceOf[Event]
       elem.dispatchEvent(evt)
     }
@@ -198,8 +200,9 @@ object GameOfLifeJS extends js.JSApp {
         dispatchChangeEvent(sizeSlider)
       case 'f' | 'F' =>
         life.step(System.currentTimeMillis())
+      case 'v' | 'V' =>
+        highlightVisited = !highlightVisited; life.update(event)
       case _ => life.update(event)
-
     }
 
     fpsLimit.onchange = (_:Event) => Scheduler.schedule(life.step,stepTime())
