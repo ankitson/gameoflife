@@ -114,14 +114,18 @@ class GameOfLifeCanvas(gridCanvas: dom.html.Canvas, cellCanvas: dom.html.Canvas,
     stats.end()
   }
 
+  var run = true
   def step(time:Double): Unit = {
-    draw(time)
-    board.step()
+    if (run) {
+      draw(time)
+      board.step()
+    }
   }
 
   def update(key: Event): Unit = key match {
     case kbd: KeyboardEvent => kbd.charCode match {
       case 'v' | 'V' => options(HighlightVisited) = !options(HighlightVisited)
+      case 'p' | 'P' => run = !run
     }
   }
 
