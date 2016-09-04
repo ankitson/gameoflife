@@ -9,6 +9,7 @@ import org.scalajs.dom.html.Div
 
 import scala.collection._
 import scala.concurrent.duration._
+import scala.language.postfixOps
 import scala.scalajs.js
 import scala.scalajs.js.Any._
 import scala.scalajs.js.annotation.JSExport
@@ -120,7 +121,6 @@ class GameOfLifeCanvas(gridCanvas: dom.html.Canvas, cellCanvas: dom.html.Canvas,
     }
   }
 
-
   def step(time:Double): Unit = {
     if (run) {
       drawStats.begin()
@@ -129,6 +129,7 @@ class GameOfLifeCanvas(gridCanvas: dom.html.Canvas, cellCanvas: dom.html.Canvas,
       computeStats.end()
       draw(time)
       drawStats.end()
+      ()
     }
   }
 

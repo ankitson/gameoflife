@@ -27,7 +27,6 @@ class Board(val rowsArr:Array[Array[Cell]]) {
 
   private def currentAndPrev() = { if (flag) (rowsArr,rowsArr2) else (rowsArr2,rowsArr)}
 
-  private def toggle() = {flag = !flag}
   private val cacheArr = Array.ofDim[Array[(Int,Int)]](n,m)
   private def neighbours(x:Int,y:Int) = {
     if (cacheArr(x)(y) == null) {
@@ -38,10 +37,6 @@ class Board(val rowsArr:Array[Array[Cell]]) {
       ).filter{ case (i,j) => i >= 0 && i < n && j >= 0 && j < m}
     }
     cacheArr(x)(y)
-  }
-
-  private def unstep() = {
-    toggle()
   }
 
   private def stepCell(x:Int,y:Int,current:Array[Array[Cell]],next:Array[Array[Cell]])= {
@@ -64,8 +59,6 @@ class Board(val rowsArr:Array[Array[Cell]]) {
   override def toString: String = {
     rows().map(row => row.mkString("")).mkString("\n")
   }
-
-
 
 }
 
@@ -107,6 +100,5 @@ object Board {
     val boardArr = Array.fill(n)(col())
     Board(boardArr)
   }
-
 
 }

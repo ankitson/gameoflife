@@ -119,7 +119,7 @@ import org.openjdk.jmh.annotations._
   [info] Bench.stepBoardBench        1536  avgt   15   182097.619 ±   2704.411  us/op
   [info] Bench.stepBoardBench        1792  avgt   15   251026.411 ±  21376.571  us/op
   [info] Bench.stepBoardBench        2048  avgt   15  1594271.271 ± 546924.223  us/op
-   todo: should be roughly n^2. investigate to see how cache affects things.
+   todo: should be roughly n^2.
   */
 object Bench {
   @State(Scope.Benchmark)
