@@ -31,12 +31,7 @@ lazy val life = crossProject.in(file(".")).
       "-Ywarn-value-discard",
       "-Ywarn-unused"
     )
-  ).jvmSettings(
-  ).jsSettings(
-    libraryDependencies ++= Seq(
-      "org.scala-js" %%% "scalajs-dom" % "0.9.0"
-    )
-  ).enablePlugins(JmhPlugin)
+  )
 
 lazy val lifeJVM = life.jvm.settings(
     sourceDirectory in Jmh := (sourceDirectory in Test).value,
@@ -45,4 +40,31 @@ lazy val lifeJVM = life.jvm.settings(
     compile in Jmh <<= (compile in Jmh) dependsOn (compile in Test),
     run in Jmh <<= (run in Jmh) dependsOn (Keys.compile in Jmh)
 ).enablePlugins(JmhPlugin)
-lazy val lifeJS = life.js
+
+lazy val lifeJS = life.js.settings(
+  resolvers += Resolver.sonatypeRepo("releases"),
+
+  libraryDependencies ++= Seq(
+    "org.scala-js" %%% "scalajs-dom" % "0.9.0",
+    "com.github.japgolly.scalajs-react" %%% "core" % "0.11.1",
+    "eu.unicredit" %%% "akkajsactor" % "0.2.0"
+  ),
+  jsDependencies ++= Seq(
+    "org.webjars.bower" % "react" % "15.2.1"
+      /        "react-with-addons.js"
+      minified "react-with-addons.min.js"
+      commonJSName "React",
+
+    "org.webjars.bower" % "react" % "15.2.1"
+      /         "react-dom.js"
+      minified  "react-dom.min.js"
+      dependsOn "react-with-addons.js"
+      commonJSName "ReactDOM",
+
+    "org.webjars.bower" % "react" % "15.2.1"
+      /         "react-dom-server.js"
+      minified  "react-dom-server.min.js"
+      dependsOn "react-dom.js"
+      commonJSName "ReactDOMServer"
+  )
+).enablePlugins(ScalaJSPlugin)

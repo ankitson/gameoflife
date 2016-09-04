@@ -2,7 +2,6 @@ package life
 
 import java.util.concurrent.TimeUnit
 
-import life.Board.{Cell, Dead, Live}
 import org.openjdk.jmh.annotations._
 
 /**

@@ -5,26 +5,154 @@
     <title>Game of Life</title>
 </head>
 <style>
+    /* From http://brennaobrien.com/blog/2014/05/style-input-type-range-in-every-browser.html */
+    /* Webkit */
+    input[type=range]{
+        -webkit-appearance: none;
+    }
+
+    input[type=range]::-webkit-slider-runnable-track {
+        width: 300px;
+        height: 5px;
+        background: #ddd;
+        border: none;
+        border-radius: 3px;
+    }
+
+    input[type=range]::-webkit-slider-thumb {
+        -webkit-appearance: none;
+        border: none;
+        height: 16px;
+        width: 16px;
+        border-radius: 50%;
+        background: goldenrod;
+        margin-top: -4px;
+    }
+
+    input[type=range]:focus {
+        outline: none;
+    }
+
+    input[type=range]:focus::-webkit-slider-runnable-track {
+        background: #ccc;
+    }
+
+    /* Firefox */
+    input[type=range]{
+        /* fix for FF unable to apply focus style bug  */
+        border: 1px solid white;
+
+        /*required for proper track sizing in FF*/
+        width: 300px;
+    }
+
+    input[type=range]::-moz-range-track {
+        width: 300px;
+        height: 5px;
+        background: #ddd;
+        border: none;
+        border-radius: 3px;
+    }
+
+    input[type=range]::-moz-range-thumb {
+        border: none;
+        height: 16px;
+        width: 16px;
+        border-radius: 50%;
+        background: goldenrod;
+    }
+
+    /*hide the outline behind the border*/
+    input[type=range]:-moz-focusring{
+        outline: 1px solid white;
+        outline-offset: -1px;
+    }
+
+    input[type=range]:focus::-moz-range-track {
+        background: #ccc;
+    }
+
+    /* IE 10+ */
+    input[type=range]::-ms-track {
+        width: 300px;
+        height: 5px;
+
+        /*remove bg colour from the track, we'll use ms-fill-lower and ms-fill-upper instead */
+        background: transparent;
+
+        /*leave room for the larger thumb to overflow with a transparent border */
+        border-color: transparent;
+        border-width: 6px 0;
+
+        /*remove default tick marks*/
+        color: transparent;
+    }
+    input[type=range]::-ms-fill-lower {
+        background: #777;
+        border-radius: 10px;
+    }
+    input[type=range]::-ms-fill-upper {
+        background: #ddd;
+        border-radius: 10px;
+    }
+    input[type=range]::-ms-thumb {
+        border: none;
+        height: 16px;
+        width: 16px;
+        border-radius: 50%;
+        background: goldenrod;
+    }
+    input[type=range]:focus::-ms-fill-lower {
+        background: #888;
+    }
+    input[type=range]:focus::-ms-fill-upper {
+        background: #ccc;
+}
+</style>
+<style>
+    html, body {
+        width: 100%;
+        height: 100%;
+        margin: 0px;
+        padding: 0px;
+        border: 0px;
+        overflow: hidden;
+        background-color: #FFFFFF;
+    }
     #life {
         position: relative;
         padding-left: 0;
         padding-right: 0;
         margin-left: auto;
         margin-right: auto;
-        margin-top: 50px;
         display: block;
         height: 100%;
         width: 100%;
     }
+    #life-grid {
+        height: 100%;
+        width: 100%;
+        position: absolute;
+        display: block;
+        z-index: 2;
+    }
+    #life-board {
+        height: 100%;
+        width: 100%;
+        position: absolute;
+        display: block;
+        z-index: 1;
+    }
+
     .ui-show-translucent {
-        opacity: 0.7;
+        opacity: 0.8;
         display: block;
         position: absolute;
         height: 10%;
         width: 100%;
         bottom: 0px;
         z-index: 3;
-        background: #AAAAAA;
+        background: #FFFFFF;
     }
     .ui-hide {
         opacity: 0;
@@ -34,76 +162,66 @@
         width: 100%;
         bottom: 0px;
         z-index: 3;
-        background: #AAAAAA;
+        background: #BBBBBB;
     }
-    #life-grid {
-        height: 100%;
-        width: 100%;
-        position: absolute;
-        display: block;
-        z-index: 2;
-        <!--border: 1px solid black;-->
+    #life-ui {
+        display: flex;
+        justify-content: space-between;
     }
-    #life-board {
-        height: 100%;
-        width: 100%;
-        position: absolute;
-        display: block;
-        z-index: 1;
+    #stats {
+        display: flex;
+        align-items: center;
     }
-    #size {
-        <!--position: absolute;-->
-        left: 1010px;
-        z-index: 4;
+    #instructions {
+        text-align: justify;
+        font-family: arial;
+        font-size: 16px;
+        font-size: 1.2vw;
     }
-    #other {
-        <!--position: absolute;-->
-        left: 1010px;
-        top: 50px;
-    }
-    #density {
-        left: 1010px;
-        top: 100px;
-    }
-    #stats-monitor {
-        position: absolute;
-        bottom: 0px;
-        right: 0px;
-        opacity: 0.8
-    }
-    html, body {
-        width: 100%;
-        height: 100%;
-        margin: 0px;
-        padding: 0px;
-        border: 0px;
-
-        background-color: #FFFFFF;
-    }
-
 </style>
 <body>
 
+
+<script src="./js/target/scala-2.11/life-jsdeps.js"></script>
 <script type="text/javascript" src="./js/target/scala-2.11/life-opt.js"></script>
 <script type="text/javascript" src="./stats.js"></script>
+
 
 <div id="life">
     <canvas id="life-board"></canvas>
     <canvas id="life-grid"></canvas>
     <div id="life-ui" class="ui-show-translucent">
-        <p id="fps"></p>
-        <input type="range" id="density" value="0.1" min="0" max="1" step="0.01">
-        <input type="range" id="size" value="10" min="1" max="300" step="1">
-        <input type="range" id="fpsLimit" value="61" min="1" max="61" step="1">
-        <p id="sizeShow"></p>
+        <div id="x" style="display: flex; align-items: center; justify-content: center; width: 30%">
+            <p>2</p>
+            <input type="range" id="size" value="100" min="2" max="300" step="1"><br>
+            <p>300</p>
+            <p>(Size)</p>
+        </div>
+        <div id="y" style="display: flex; align-items: center; justify-content: center; width: 30%">
+            <p>1</p>
+            <input type="range" id="fpsLimit" value="1" min="1" max="61" step="1">
+            <p>60(Max FPS)</p>
+        </div>
+        <div id="instructions">
+            <div>
+                p   play/pause
+            </div>
+            <div class="line">
+                n   new board
+            </div>
+            <div class="line">
+                z/x   decrease/increase framerate
+            </div>
+            <div class="line">
+                &lt;/&gt;    decrease/increase board size
+            </div>
+        </div>
+        <div id="stats">
+            <div id="total"></div>
+            <div id="step"></div>
+        </div>
     </div>
 </div>
-
-<div id="other">
-
-</div>
-
-
 
 <script type="text/javascript">
     life.GameOfLifeJS().main();

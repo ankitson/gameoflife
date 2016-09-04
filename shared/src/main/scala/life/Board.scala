@@ -1,6 +1,6 @@
 package life
 
-import Board._
+import life.Board._
 
 import scala.util.Random
 class Board(val rowsArr:Array[Array[Cell]]) {
@@ -9,29 +9,11 @@ class Board(val rowsArr:Array[Array[Cell]]) {
   val m = rowsArr(0).length
   val rowsArr2 = Array.fill[Cell](n,m)(Dead)
 
-  override def toString: String = {
-    rows().map(row => row.mkString("")).mkString("\n")
-  }
-
-  def toggle() = {flag = !flag}
-
   def rows() = {
     if (flag) rowsArr else rowsArr2
   }
 
-  def currentAndPrev() = { if (flag) (rowsArr,rowsArr2) else (rowsArr2,rowsArr)}
-
-  private val cacheArr = Array.ofDim[Array[(Int,Int)]](n,m)
-  def neighbours(x:Int,y:Int) = {
-    if (cacheArr(x)(y) == null) {
-      cacheArr(x)(y) = Array(
-        (x-1,y-1), (x-1,y), (x-1,y+1),
-        (x,y-1), (x,y+1),
-        (x+1,y-1), (x+1,y), (x+1,y+1)
-      ).filter{ case (i,j) => i >= 0 && i < n && j >= 0 && j < m}
-    }
-    cacheArr(x)(y)
-  }
+  def cellChanged(x:Int,y:Int) = { val (c,p) = currentAndPrev(); c(x)(y) != p(x)(y) }
 
   def step() = {
     val (board1,board2) = currentAndPrev()
@@ -43,8 +25,26 @@ class Board(val rowsArr:Array[Array[Cell]]) {
     flag = !flag
   }
 
+  private def currentAndPrev() = { if (flag) (rowsArr,rowsArr2) else (rowsArr2,rowsArr)}
 
-  def stepCell(x:Int,y:Int,current:Array[Array[Cell]],next:Array[Array[Cell]])= {
+  private def toggle() = {flag = !flag}
+  private val cacheArr = Array.ofDim[Array[(Int,Int)]](n,m)
+  private def neighbours(x:Int,y:Int) = {
+    if (cacheArr(x)(y) == null) {
+      cacheArr(x)(y) = Array(
+        (x-1,y-1), (x-1,y), (x-1,y+1),
+        (x,y-1), (x,y+1),
+        (x+1,y-1), (x+1,y), (x+1,y+1)
+      ).filter{ case (i,j) => i >= 0 && i < n && j >= 0 && j < m}
+    }
+    cacheArr(x)(y)
+  }
+
+  private def unstep() = {
+    toggle()
+  }
+
+  private def stepCell(x:Int,y:Int,current:Array[Array[Cell]],next:Array[Array[Cell]])= {
     val cell = current(x)(y)
     val aliveNbrs = neighbours(x,y).count{case (i,j) => current(i)(j) == Live}
     (cell,aliveNbrs) match {
@@ -60,6 +60,12 @@ class Board(val rowsArr:Array[Array[Cell]]) {
     case (board2: Board) => (this.rowsArr sameElements board2.rowsArr) && (this.rowsArr2 sameElements board2.rowsArr2)
     case _ => false
   }
+
+  override def toString: String = {
+    rows().map(row => row.mkString("")).mkString("\n")
+  }
+
+
 
 }
 

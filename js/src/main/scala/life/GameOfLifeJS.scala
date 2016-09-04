@@ -1,11 +1,11 @@
 package life
 
-import life.Board.Live
+import life.Board.{Cell, Dead, Live}
 import life.GameOfLifeJS.{ConfigOption, HighlightVisited}
 import org.scalajs.dom
+import org.scalajs.dom._
 import org.scalajs.dom.ext.Color
 import org.scalajs.dom.html.Div
-import org.scalajs.dom._
 
 import scala.collection._
 import scala.concurrent.duration._
@@ -16,12 +16,11 @@ import scala.scalajs.js.annotation.JSExport
 class GameOfLifeCanvas(gridCanvas: dom.html.Canvas, cellCanvas: dom.html.Canvas,board:Board,
                        options: mutable.Map[ConfigOption,Boolean] = mutable.Map(HighlightVisited -> false)
                       ) {
-
+  var run = true
   var cellWidth: Double = _
   var cellHeight: Double = _
-  val stats = js.Dynamic.newInstance(js.Dynamic.global.Stats)()
-  var lastCall = 0d
-  val fpsDisplay = dom.document.getElementById("fps")
+  val drawStats = js.Dynamic.newInstance(js.Dynamic.global.Stats)()
+  val computeStats = js.Dynamic.newInstance(js.Dynamic.global.Stats)()
   var boardCtx: dom.CanvasRenderingContext2D = _
   var visited: collection.mutable.Set[(Int,Int)] = _
 
@@ -70,55 +69,66 @@ class GameOfLifeCanvas(gridCanvas: dom.html.Canvas, cellCanvas: dom.html.Canvas,
     boardCtx = initBoard(boardCanvas)
     cellWidth = boardCtx.canvas.width.toDouble / board.n
     cellHeight = boardCtx.canvas.height.toDouble / board.m
-    stats.showPanel(1); // 0: fps, 1: ms, 2: mb, 3+: custom
-    val node = stats.dom.asInstanceOf[org.scalajs.dom.Element]
-    node.setAttribute("id","stats-monitor")
-    node.removeAttribute("style")
-    dom.document.getElementById("life-ui").appendChild(node)
-
+    ()
   }
 
   def init(): Unit = {
+    drawStats.showPanel(0); // 0: fps, 1: ms, 2: mb, 3+: custom
+    computeStats.showPanel(1)
+
+    dom.document.getElementById("life-ui").removeChild(dom.document.getElementById("stats"))
+    val statsDiv = dom.document.createElement("div")
+    statsDiv.id = "stats"
+    dom.document.getElementById("life-ui").appendChild(statsDiv)
+
+    val node1 = drawStats.dom.asInstanceOf[org.scalajs.dom.Element]
+    node1.setAttribute("class","stats-monitor")
+    node1.removeAttribute("style")
+    dom.document.getElementById("stats").appendChild(node1)
+
+    val node2 = computeStats.dom.asInstanceOf[org.scalajs.dom.Element]
+    node2.setAttribute("class","stats-monitor-2")
+    node2.removeAttribute("style")
+    dom.document.getElementById("stats").appendChild(node2)
+
     visited = collection.mutable.Set[(Int,Int)]()
     initAll(cellCanvas,gridCanvas,board)
   }
 
-
-  def draw(timestamp: Double): Unit = {
-    stats.begin()
-    val duration = timestamp - lastCall
-    val fps = 1000 / duration
-    fpsDisplay.innerHTML =  f"${duration}%1.2f ms/frame" + "<br>" + f"${fps}%1.2f frames/sec"
-    lastCall = timestamp
-
-    val (boardArr, boardArr2) = board.currentAndPrev()
-    for (row <- 0 until board.n; col <- 0 until board.m) {
-      val cellChanged = boardArr(row)(col) != boardArr2(row)(col)
-      if (cellChanged) {
-        if (boardArr(row)(col) == Live) {
-          visited.add((row, col))
-          boardCtx.fillStyle = "rgba(255,0,0,1)"
-        } else if (options(HighlightVisited) && visited.contains((row, col))) {
-          boardCtx.fillStyle = "rgba(0,200,50,0.3)"
-        } else {
-          boardCtx.fillStyle = "rgba(255,255,255,1)"
+  def drawCell(cell: Cell,row:Int,col:Int,cellWidth:Double,cellHeight:Double): Unit = {
+    val LIVE_FILL = "rgba(255,0,0,1)"
+    val VISITED_FILL = "rgba(0,200,50,0.3)"
+    val DEAD_FILL = "rgba(255,255,255,1)"
+    boardCtx.fillStyle = cell match {
+      case Live => visited.add((row,col)); LIVE_FILL
+      case Dead =>
+        if (options(HighlightVisited) && visited.contains((row, col))) {
+          VISITED_FILL
         }
-
-        val startX = cellWidth * col
-        val startY = cellHeight * row
-
-        boardCtx.clearRect(startX, startY, cellWidth, cellHeight)
-        boardCtx.fillRect(startX, startY, cellWidth, cellHeight)
-      }
+        else
+          DEAD_FILL
     }
-    stats.end()
+    val startX = cellWidth * col
+    val startY = cellHeight * row
+    boardCtx.clearRect(startX,startY,cellWidth,cellHeight)
+    boardCtx.fillRect(startX, startY, cellWidth, cellHeight)
   }
 
-  var run = true
+  def draw(timestamp:Double): Unit = {
+    for (row <- 0 until board.n; col <- 0 until board.m) {
+      if (board.cellChanged(row,col)) drawCell(board.rows()(row)(col),row,col,cellWidth,cellHeight)
+    }
+  }
+
+
   def step(time:Double): Unit = {
     if (run) {
-      draw(time)
+      drawStats.begin()
+      computeStats.begin()
       board.step()
+      computeStats.end()
+      draw(time)
+      drawStats.end()
     }
   }
 
@@ -206,6 +216,14 @@ object GameOfLifeJS extends js.JSApp {
         life.step(System.currentTimeMillis())
       case 'v' | 'V' =>
         highlightVisited = !highlightVisited; life.update(event)
+      case 'z' | 'Z' =>
+        event.preventDefault()
+        fpsLimit.value = Math.max(fpsLimit.value.toInt - 1, 0).toString
+        dispatchChangeEvent(fpsLimit)
+      case 'x' | 'X' =>
+        event.preventDefault()
+        fpsLimit.value = Math.min(fpsLimit.value.toInt + 1, 61).toString
+        dispatchChangeEvent(fpsLimit)
       case _ => life.update(event)
     }
 
@@ -220,6 +238,10 @@ object GameOfLifeJS extends js.JSApp {
       dom.document.getElementById("life-ui").asInstanceOf[Div].setAttribute("class","ui-hide")
     }
 
+
+
+
   }
 
 }
+
