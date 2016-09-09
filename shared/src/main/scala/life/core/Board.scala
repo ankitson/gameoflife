@@ -1,13 +1,15 @@
-package life
-
-import life.Board._
+package life.core
 
 import scala.util.Random
-class Board(val rowsArr:Array[Array[Cell]]) {
+class RectangleBoard(val rowsArr:Array[Array[Cell]]) extends Board {
   var flag = true
   val n = rowsArr.length
   val m = rowsArr(0).length
   val rowsArr2 = Array.fill[Cell](n,m)(Dead)
+
+  override def numRows(): Int = n
+
+  override def numCols(): Int = m
 
   def rows() = {
     if (flag) rowsArr else rowsArr2
@@ -52,7 +54,7 @@ class Board(val rowsArr:Array[Array[Cell]]) {
   }
 
   override def equals(obj: scala.Any): Boolean = obj match {
-    case (board2: Board) => (this.rowsArr sameElements board2.rowsArr) && (this.rowsArr2 sameElements board2.rowsArr2)
+    case (board2: RectangleBoard) => (this.rowsArr sameElements board2.rowsArr) && (this.rowsArr2 sameElements board2.rowsArr2)
     case _ => false
   }
 
@@ -62,22 +64,21 @@ class Board(val rowsArr:Array[Array[Cell]]) {
 
 }
 
+trait Board {
+  def step():Unit
+  def numRows(): Int
+  def numCols(): Int
+  def rows(): Array[Array[Cell]]
+  def cellChanged(rowIdx: Int, colIdx: Int): Boolean
+}
+
 object Board {
-  sealed trait Cell {
-    override def toString: String = this match {
-      case Live => "*"
-      case Dead => "-"
-    }
-  }
-  case object Live extends Cell
-  case object Dead extends Cell
+  def rectBoard(rows:Array[Array[Cell]]) = new RectangleBoard(rows)
 
-  def apply(rows:Array[Array[Cell]]) = new Board(rows)
-
-  def apply(string:String):Board = {
+  def rectBoard(string:String):Board = {
     val rowStrings = string.trim.split("\n")
 
-    Board(rowStrings.map { rowString =>
+    rectBoard(rowStrings.map { rowString =>
       val cellStrings = rowString.trim.toList
       val rowValue: List[Cell] = cellStrings.map {
         case '*' => Live
@@ -87,7 +88,7 @@ object Board {
     })
   }
 
-  def randomBoard(n:Int,m:Int,density:Double = 0.1): Board = {
+  def randomRectBoard(n:Int,m:Int,density:Double = 0.1): RectangleBoard = {
     def col() = {
       val colArr = Array.fill(m)(Dead: Cell)
       for (j <- 0 until m) {
@@ -98,7 +99,6 @@ object Board {
       colArr
     }
     val boardArr = Array.fill(n)(col())
-    Board(boardArr)
+    rectBoard(boardArr)
   }
-
 }

@@ -1,6 +1,6 @@
 package life
 
-import life.Board.{Dead, Live}
+import life.core.{Board, Dead, Live}
 import utest._
 object TestBoard extends TestSuite {
 
@@ -10,7 +10,7 @@ object TestBoard extends TestSuite {
       |-*------*-
       |-*------*-
     """.stripMargin
-  var board = Board(boardStr)
+  var board = Board.rectBoard(boardStr)
 
   val tests = this {
     'step {
@@ -24,7 +24,7 @@ object TestBoard extends TestSuite {
           assert (board.rows()(1)(col) == Live)
       }
       board.step()
-      board.rows().zipWithIndex.foreach{case (row,idx) => assert ( row sameElements Board(boardStr).rows()(idx) ) }
+      board.rows().zipWithIndex.foreach{case (row,idx) => assert ( row sameElements Board.rectBoard(boardStr).rows()(idx) ) }
 
       boardStr =
         """
@@ -34,7 +34,7 @@ object TestBoard extends TestSuite {
           |-----
           |*---*
         """.stripMargin
-      board = Board(boardStr)
+      board = Board.rectBoard(boardStr)
       board.step()
       println("after step: \n"+board)
     }

@@ -1,7 +1,7 @@
 package life
 
-import life.Board.{Cell, Dead, Live}
 import life.GameOfLifeJS.{ConfigOption, HighlightVisited}
+import life.core.{Board, Cell, Dead, Live}
 import org.scalajs.dom
 import org.scalajs.dom._
 import org.scalajs.dom.ext.Color
@@ -66,10 +66,10 @@ class GameOfLifeCanvas(gridCanvas: dom.html.Canvas, cellCanvas: dom.html.Canvas,
   }
 
   private def initAll(boardCanvas:dom.html.Canvas,gridCanvas:dom.html.Canvas,board:Board) = {
-    initGrid(gridCanvas,board.m,board.n)
+    initGrid(gridCanvas,board.numCols(),board.numRows())
     boardCtx = initBoard(boardCanvas)
-    cellWidth = boardCtx.canvas.width.toDouble / board.n
-    cellHeight = boardCtx.canvas.height.toDouble / board.m
+    cellWidth = boardCtx.canvas.width.toDouble / board.numRows()
+    cellHeight = boardCtx.canvas.height.toDouble / board.numCols()
     ()
   }
 
@@ -116,8 +116,10 @@ class GameOfLifeCanvas(gridCanvas: dom.html.Canvas, cellCanvas: dom.html.Canvas,
   }
 
   def draw(timestamp:Double): Unit = {
-    for (row <- 0 until board.n; col <- 0 until board.m) {
-      if (board.cellChanged(row,col)) drawCell(board.rows()(row)(col),row,col,cellWidth,cellHeight)
+    for (row <- 0 until board.numRows(); col <- 0 until board.numCols()) {
+      if (board.cellChanged(row,col)) {
+        drawCell(board.rows()(row)(col),row,col,cellWidth,cellHeight)
+      }
     }
   }
 
@@ -137,6 +139,7 @@ class GameOfLifeCanvas(gridCanvas: dom.html.Canvas, cellCanvas: dom.html.Canvas,
     case kbd: KeyboardEvent => kbd.charCode match {
       case 'v' | 'V' => options(HighlightVisited) = !options(HighlightVisited)
       case 'p' | 'P' => run = !run
+      case _ => ()
     }
   }
 
@@ -171,7 +174,7 @@ object GameOfLifeJS extends js.JSApp {
     }
   }
 
-  var board: Board = _
+
 
   def main(): Unit = {
     val boardCanvas = dom.document.getElementById("life-board").asInstanceOf[dom.html.Canvas]
@@ -179,20 +182,16 @@ object GameOfLifeJS extends js.JSApp {
     val fpsLimit = dom.document.getElementById("fpsLimit").asInstanceOf[dom.html.Input]
     val sizeSlider = dom.document.getElementById("size").asInstanceOf[dom.html.Input]
     var highlightVisited = true
-
-    board = Board.randomBoard(sizeSlider.value.toInt,sizeSlider.value.toInt)
-    var life = new GameOfLifeCanvas(gridCanvas,boardCanvas,board,mutable.Map(HighlightVisited -> highlightVisited))
+    var board: Board = Board.randomRectBoard(sizeSlider.value.toInt,sizeSlider.value.toInt)
+    var life: GameOfLifeCanvas = new GameOfLifeCanvas(gridCanvas,boardCanvas,board,mutable.Map(HighlightVisited -> highlightVisited))
 
     def stepTime(): Duration = {
       if (fpsLimit.value.toInt == 61) Duration.Inf else 1000/fpsLimit.value.toDouble millis
     }
 
-    Scheduler.schedule(life.step,stepTime())
-
-
     def renderBoard(size:Int) = {
       Scheduler.cancel()
-      board = Board.randomBoard(size,size)
+      board = Board.randomRectBoard(size,size)
       life = new GameOfLifeCanvas(gridCanvas,boardCanvas,board,mutable.Map(HighlightVisited -> highlightVisited))
       Scheduler.schedule(life.step,stepTime())
     }
@@ -239,9 +238,7 @@ object GameOfLifeJS extends js.JSApp {
       dom.document.getElementById("life-ui").asInstanceOf[Div].setAttribute("class","ui-hide")
     }
 
-
-
-
+    renderBoard(sizeSlider.value.toInt)
   }
 
 }

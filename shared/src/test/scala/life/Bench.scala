@@ -2,6 +2,7 @@ package life
 
 import java.util.concurrent.TimeUnit
 
+import life.core.Board
 import org.openjdk.jmh.annotations._
 
 /**
@@ -127,7 +128,7 @@ object Bench {
     val boardSizes = Array(
       10,20,40,80,160,240,320,480,512,1024,1280,1536,1792,2048
     )
-    val boards = boardSizes.map(n => (n,Board.randomBoard(n,n,0.1))).toMap
+    val boards = boardSizes.map(n => (n,Board.randomRectBoard(n,n,0.1))).toMap
 
     @Param(Array("10","20","40","80","160","240","320","480","512","1024","1280","1536","1792","2048"))
     var boardSize: Int = _
